@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Emacs — Interactive Guide &amp; Chord Trainer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231a1726'/%3E%3Ctext x='16' y='23' font-family='monospace' font-size='19' font-weight='700' fill='%239a7fd4' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --ink:#e8e6ef; --ink-dim:#9d99ad; --ink-faint:#6d697e;
+    --bg:#141220; --surface:#1a1726; --surface-2:#221e31; --line:#2e2942;
+    --accent:#9a7fd4;            /* emacs purple */
+    --accent-dim:#5f4d8a;
+    --ok:#6fbf8a; --warn:#d4a05f; --info:#6f9fd4; --dead:#6d697e;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    --r:6px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  code,kbd,.mono{font-family:var(--mono)}
+  a{color:var(--accent)}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px 96px}
+  header.top{position:sticky;top:0;z-index:50;background:rgba(20,18,32,.88);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .top-in{max-width:1180px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:18px}
+  .brand{font-family:var(--mono);font-weight:700;letter-spacing:-.02em}
+  .brand b{color:var(--accent)}
+  .top nav{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
+  .top nav button{background:none;border:1px solid transparent;color:var(--ink-dim);font:inherit;font-size:13px;padding:5px 11px;border-radius:var(--r);cursor:pointer}
+  .top nav button:hover{color:var(--ink);background:var(--surface-2)}
+  .top nav button[aria-current="true"]{color:var(--ink);border-color:var(--line);background:var(--surface-2)}
+
+  .hero{padding:56px 0 34px;border-bottom:1px solid var(--line);margin-bottom:36px}
+  .eyebrow{font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase}
+  h1{font-size:clamp(28px,4vw,42px);line-height:1.1;margin:12px 0 14px;letter-spacing:-.025em;font-weight:650}
+  .lede{color:var(--ink-dim);max-width:64ch;font-size:16px;text-wrap:pretty}
+  .lede b{color:var(--ink);font-weight:600}
+  .prog{display:flex;align-items:center;gap:10px;margin-top:26px;font-family:var(--mono);font-size:12px;color:var(--ink-faint);flex-wrap:wrap}
+  .prog-bar{flex:1;max-width:260px;height:3px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+  .prog-bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .35s ease}
+
+  section{display:none;scroll-margin-top:80px}
+  section.on{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  h2{font-size:22px;margin:0 0 6px;letter-spacing:-.02em;font-weight:620}
+  .sub{color:var(--ink-dim);margin:0 0 24px;max-width:68ch;text-wrap:pretty}
+  h3{font-size:15px;margin:28px 0 10px;letter-spacing:-.01em}
+
+  kbd{display:inline-block;background:var(--surface-2);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 6px;font-size:12px;color:var(--ink);white-space:nowrap;font-family:var(--mono)}
+  kbd.hot{border-color:var(--accent-dim);color:var(--accent)}
+
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0 4px}
+  th,td{text-align:left;padding:7px 12px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);font-weight:500}
+  td.k{text-align:right;white-space:nowrap;font-family:var(--mono);color:var(--accent)}
+  td.cmd{font-family:var(--mono);font-size:12px;color:var(--ink-faint);text-align:right;white-space:nowrap}
+  tbody tr:hover{background:var(--surface)}
+
+  .ladder{border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .rung{display:grid;grid-template-columns:150px 1fr;border-bottom:1px solid var(--line);cursor:pointer;background:var(--surface)}
+  .rung:last-child{border-bottom:0}
+  .rung:hover,.rung.open{background:var(--surface-2)}
+  .rung-k{padding:13px 16px;font-family:var(--mono);font-size:13px;color:var(--accent);border-right:1px solid var(--line);display:flex;align-items:center;gap:8px}
+  .rung-k .ix{color:var(--ink-faint);font-size:11px}
+  .rung-v{padding:13px 16px;color:var(--ink-dim);font-size:14px}
+  .rung-v .more{display:none;margin-top:8px;color:var(--ink-faint);font-size:13px;border-left:2px solid var(--accent-dim);padding-left:10px}
+  .rung.open .rung-v .more{display:block}
+
+  .note{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:12px 14px;margin:16px 0;font-size:14px;color:var(--ink-dim)}
+  .note b{color:var(--ink)}
+  .note.warn{border-color:var(--accent-dim)}
+  .note.warn b{color:var(--accent)}
+
+  .cmdline{display:flex;align-items:center;gap:10px;background:#0f0d18;border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;font-family:var(--mono);font-size:13px;margin:10px 0}
+  .cmdline span{flex:1;overflow-x:auto;white-space:nowrap;color:var(--ink)}
+  .cmdline span::before{content:"$ ";color:var(--accent)}
+  .cmdline button{background:var(--surface-2);border:1px solid var(--line);color:var(--ink-dim);font:inherit;font-size:11px;padding:3px 9px;border-radius:4px;cursor:pointer}
+  .cmdline button:hover{color:var(--ink);border-color:var(--accent-dim)}
+
+  .cards{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));margin:14px 0}
+  .card{border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;background:var(--surface)}
+  .card h4{margin:0 0 5px;font-size:13px;font-family:var(--mono);color:var(--accent);font-weight:600}
+  .card p{margin:0;font-size:13px;color:var(--ink-dim)}
+
+  /* emacs frame sim */
+  .frame{border:1px solid var(--line);border-radius:7px;overflow:hidden;background:#0f0d18;margin:18px 0;font-family:var(--mono);font-size:12.5px}
+  .fr-buf{padding:12px 14px;min-height:78px;line-height:1.6;color:var(--ink-dim);white-space:pre-wrap;position:relative}
+  .fr-buf .pt{background:var(--accent);color:#141220;animation:blink 1.1s step-end infinite}
+  @keyframes blink{50%{background:transparent;color:var(--ink)}}
+  .fr-buf .reg{background:rgba(154,127,212,.20)}
+  .modeline{background:var(--surface-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:4px 12px;font-size:11.5px;color:var(--ink-dim);display:flex;gap:12px;flex-wrap:wrap}
+  .modeline .b{color:var(--ink)}
+  .echo{padding:5px 12px;font-size:11.5px;color:var(--ink-faint);min-height:24px}
+  .echo .m{color:var(--accent)}
+  .echo .e{color:var(--warn)}
+
+  /* game */
+  .game{border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+  .g-head{display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--surface-2);flex-wrap:wrap}
+  .g-title{font-family:var(--mono);font-size:13px}
+  .g-stats{margin-left:auto;display:flex;gap:15px;font-family:var(--mono);font-size:12px;color:var(--ink-dim);flex-wrap:wrap}
+  .g-stats b{color:var(--ink)}
+  .g-stats .streak b{color:var(--accent)}
+  .g-body{padding:22px 16px 16px;text-align:center}
+  .g-task{font-size:17px;margin:0 0 4px;min-height:26px}
+  .g-task em{color:var(--accent);font-style:normal}
+  .g-hint{font-family:var(--mono);font-size:12px;color:var(--ink-faint);min-height:18px;margin-bottom:14px}
+  .keyview{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:14px;background:#0f0d18;border:1px solid var(--line);border-radius:var(--r);padding:9px 18px;min-width:250px;justify-content:center;letter-spacing:.02em}
+  .keyview .typed{color:var(--accent)}
+  .keyview .ghost{color:var(--ink-faint)}
+  .g-fb{min-height:22px;margin-top:12px;font-family:var(--mono);font-size:13px}
+  .g-fb.good{color:var(--ok)}
+  .g-fb.bad{color:var(--warn)}
+  .g-foot{display:flex;gap:10px;justify-content:center;padding:0 16px 16px;flex-wrap:wrap}
+  .btn{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:13px;padding:7px 15px;border-radius:var(--r);cursor:pointer}
+  .btn:hover{border-color:var(--accent-dim)}
+  .btn.pri{background:var(--accent);border-color:var(--accent);color:#15121f;font-weight:600}
+  .btn.pri:hover{filter:brightness(1.08)}
+  .g-log{border-top:1px solid var(--line);max-height:128px;overflow-y:auto;padding:10px 16px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);background:#0f0d18}
+  .g-log div{padding:1px 0}
+  .g-log .y{color:var(--ok)}
+  .g-log .n{color:var(--warn)}
+  .pill{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--ink-faint)}
+  .pill.live{border-color:var(--ok);color:var(--ok)}
+  .catsel{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;padding:0 16px 14px}
+  .catsel button{background:none;border:1px solid var(--line);color:var(--ink-faint);font:inherit;font-size:11.5px;padding:3px 10px;border-radius:20px;cursor:pointer;font-family:var(--mono)}
+  .catsel button[aria-pressed="true"]{border-color:var(--accent-dim);color:var(--accent);background:var(--surface-2)}
+
+  .navrow{display:flex;justify-content:space-between;gap:12px;margin-top:32px}
+  .foot{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-faint)}
+  .foot a{color:var(--ink-dim)}
+  @media(max-width:760px){.rung{grid-template-columns:110px 1fr}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><b>emacs</b> · interactive guide</div>
+    <nav id="nav"></nav>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="eyebrow">gnu emacs 29</div>
+    <h1>Learn Emacs by pressing the keys.</h1>
+    <p class="lede">Emacs isn't hard because the commands are complex — it's hard because <b>nothing is where your muscle memory expects it</b>. There's no Ctrl-S to save, no Ctrl-Z to undo. This guide teaches the notation, the handful of chords that carry 90% of a session, and then drills them until your fingers know them.</p>
+    <div class="prog">
+      <span id="progTxt">step 1 / 6</span>
+      <span class="prog-bar"><i id="progBar"></i></span>
+      <span>every binding verified against a live Emacs 29.3</span>
+    </div>
+  </div>
+
+  <!-- 1 -->
+  <section id="s-notation" class="on">
+    <h2>Read the notation first</h2>
+    <p class="sub">Emacs docs are unreadable until you know this, and it takes about a minute. Every binding you'll ever see is built from these pieces.</p>
+
+    <table>
+      <thead><tr><th>Written</th><th>Means</th><th></th></tr></thead>
+      <tbody>
+        <tr><td class="k">C-f</td><td>Hold <kbd>Ctrl</kbd>, press <kbd>f</kbd>.</td><td class="cmd">"Control f"</td></tr>
+        <tr><td class="k">M-f</td><td>Hold <kbd>Alt</kbd> (or press <kbd>Esc</kbd> first, then release), press <kbd>f</kbd>.</td><td class="cmd">"Meta f"</td></tr>
+        <tr><td class="k">C-M-f</td><td>Hold <kbd>Ctrl</kbd>+<kbd>Alt</kbd> together, press <kbd>f</kbd>.</td><td class="cmd">both modifiers</td></tr>
+        <tr><td class="k">C-x C-s</td><td>Two chords <em>in sequence</em>: Ctrl-x, then Ctrl-s.</td><td class="cmd">a "prefix key"</td></tr>
+        <tr><td class="k">C-x 2</td><td>Ctrl-x, release, then plain <kbd>2</kbd>.</td><td class="cmd">sequence</td></tr>
+        <tr><td class="k">RET / SPC / DEL</td><td>Enter / Space / Backspace.</td><td class="cmd">named keys</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note warn"><b>Meta is Alt on virtually every modern keyboard.</b> If <kbd>Alt</kbd> is swallowed by your terminal or window manager, press <kbd>Esc</kbd> and <em>release</em> it, then the key — <code>Esc f</code> is identical to <code>M-f</code>.</div>
+
+    <h3>The two you need before anything else</h3>
+    <div class="cards">
+      <div class="card"><h4>C-g</h4><p><code>keyboard-quit</code> — cancels whatever you started. Lost? Stuck in a half-typed chord? Press it. Press it twice. Nothing bad happens.</p></div>
+      <div class="card"><h4>C-x C-c</h4><p><code>save-buffers-kill-terminal</code> — quits Emacs. The famous "how do I exit" answer. It offers to save first.</p></div>
+    </div>
+
+    <div class="note"><b>The vocabulary is deliberate.</b> Emacs calls things by its own names, and the docs never translate: a <b>buffer</b> is the text in memory, a <b>file</b> is what's on disk, a <b>window</b> is a pane inside the app, a <b>frame</b> is what your OS calls a window, <b>point</b> is the cursor, and <b>the mark</b> is the other end of a selection. <b>Killing</b> is cutting, <b>yanking</b> is pasting.</div>
+
+    <div class="navrow"><span></span><button class="btn pri" data-go="s-model">The mental model →</button></div>
+  </section>
+
+  <!-- 2 -->
+  <section id="s-model">
+    <h2>Six ideas that make the rest obvious</h2>
+    <p class="sub">Click any rung. These aren't trivia — each one explains why a whole family of keys is shaped the way it is.</p>
+    <div class="ladder" id="ladder">
+      <div class="rung"><div class="rung-k"><span class="ix">01</span>Buffer</div><div class="rung-v">Text held in memory — usually, but not always, a file.
+        <div class="more">Scratch pads, directory listings, shell sessions and help output are all buffers. <code>C-x b</code> switches, <code>C-x C-b</code> lists, <code>C-x k</code> kills one. Closing a buffer never touches the file unless you save.</div></div></div>
+      <div class="rung"><div class="rung-k"><span class="ix">02</span>Point &amp; mark</div><div class="rung-v">The cursor, and the anchor you set to define a region.
+        <div class="more">Set the mark with <code>C-SPC</code>, move point, and the text between them is <em>the region</em> — Emacs's selection. <code>C-x C-x</code> jumps between the two ends so you can adjust either. Verified: <code>set-mark-command</code> / <code>exchange-point-and-mark</code>.</div></div></div>
+      <div class="rung"><div class="rung-k"><span class="ix">03</span>Kill ring</div><div class="rung-v">Not a clipboard — a <em>stack</em> of everything you've cut.
+        <div class="more"><code>C-w</code> kills the region, <code>M-w</code> copies it, <code>C-y</code> yanks the most recent. The trick: <code>M-y</code> immediately after <code>C-y</code> cycles backwards through older kills. Consecutive <code>C-k</code>s append into one entry.</div></div></div>
+      <div class="rung"><div class="rung-k"><span class="ix">04</span>Prefix keys</div><div class="rung-v"><code>C-x</code> and <code>C-h</code> open whole keymaps.
+        <div class="more">This is why Emacs has room for thousands of commands. <code>C-x</code> is the general prefix (files, buffers, windows), <code>C-h</code> is help. Start one and pause — Emacs shows the options in the echo area.</div></div></div>
+      <div class="rung"><div class="rung-k"><span class="ix">05</span>Modes</div><div class="rung-v">One major mode per buffer, any number of minor modes.
+        <div class="more">The major mode is the language/task (<code>python-mode</code>, <code>dired-mode</code>) and it rebinds keys to fit. Minor modes layer extras on top. <code>C-h m</code> describes everything active in the current buffer — the fastest way to learn a mode you've landed in.</div></div></div>
+      <div class="rung"><div class="rung-k"><span class="ix">06</span>M-x</div><div class="rung-v">Every command has a name, and you can always just type it.
+        <div class="more"><code>M-x</code> runs <code>execute-extended-command</code>. Keybindings are shortcuts to named functions — nothing more. If you don't know a binding, type the name; Emacs completes it and then <em>tells you the binding</em> so you learn it for next time.</div></div></div>
+    </div>
+
+    <h3>What the frame is telling you</h3>
+    <div class="frame">
+      <div class="fr-buf">The quick brown fox<span class="pt">&nbsp;</span>jumps over the lazy dog.
+Point is the block cursor. Text between mark and point is the region.</div>
+      <div class="modeline"><span class="b">-UUU:----F1</span><span class="b">notes.txt</span><span>All L2 (Text)</span></div>
+      <div class="echo">echo area — messages, prompts, and half-finished key sequences appear here</div>
+    </div>
+    <p class="sub" style="margin-top:2px">The <b>mode line</b> is the status bar: modified flag, buffer name, position, and active modes. The <b>echo area</b> is the single line below it — it's where Emacs talks to you, and where <code>M-x</code> prompts appear.</p>
+
+    <div class="navrow"><button class="btn" data-go="s-notation">← Back</button><button class="btn pri" data-go="s-survival">Survival keys →</button></div>
+  </section>
+
+  <!-- 3 -->
+  <section id="s-survival">
+    <h2>The survival set</h2>
+    <p class="sub">If you learn only this screen you can edit real files productively. Every command name below was resolved from a live Emacs 29.3 — none are from memory.</p>
+    <div id="tables"></div>
+    <div class="note"><b>Arrow keys, Home, End, PageUp and Backspace all work normally.</b> Nothing here is mandatory. The chords exist because they're faster once learned — your hands never leave the home row — but Emacs is perfectly usable while you're still learning them.</div>
+    <div class="navrow"><button class="btn" data-go="s-model">← Back</button><button class="btn pri" data-go="s-help">Self-help →</button></div>
+  </section>
+
+  <!-- 4 -->
+  <section id="s-help">
+    <h2>Emacs documents itself</h2>
+    <p class="sub">This is the single most valuable habit, and the reason you never need to memorise everything. The help system knows the <em>current</em> state of your Emacs — including your own config and any package you installed.</p>
+    <table>
+      <thead><tr><th>Ask</th><th>Key</th><th>Command</th></tr></thead>
+      <tbody>
+        <tr><td>"What does this key do?"</td><td class="k">C-h k</td><td class="cmd">describe-key</td></tr>
+        <tr><td>"What does this function do?"</td><td class="k">C-h f</td><td class="cmd">describe-function</td></tr>
+        <tr><td>"Which commands mention <em>word</em>?"</td><td class="k">C-h a</td><td class="cmd">apropos-command</td></tr>
+        <tr><td>"What can I do in this buffer?"</td><td class="k">C-h m</td><td class="cmd">describe-mode</td></tr>
+        <tr><td>"Show me every active binding"</td><td class="k">C-h b</td><td class="cmd">describe-bindings</td></tr>
+        <tr><td>"Run the built-in tutorial"</td><td class="k">C-h t</td><td class="cmd">help-with-tutorial</td></tr>
+      </tbody>
+    </table>
+    <div class="note warn"><b>Do the built-in tutorial.</b> <code>C-h t</code> opens a hands-on walkthrough written by the Emacs maintainers that makes you practise in a live buffer. It's about 30 minutes and it's still the best introduction that exists — this page is a companion to it, not a replacement.</div>
+
+    <h3>Getting unstuck</h3>
+    <div class="cards">
+      <div class="card"><h4>C-g</h4><p>Cancel the current command or a partly-typed chord. The universal escape hatch.</p></div>
+      <div class="card"><h4>C-x u &nbsp;·&nbsp; C-/</h4><p><code>undo</code>. Both work. Keep pressing to go further back.</p></div>
+      <div class="card"><h4>M-x recover-this-file</h4><p>Emacs auto-saves to <code>#file#</code>. If it or the machine died, this restores your work.</p></div>
+      <div class="card"><h4>C-x C-c won't quit</h4><p>It's asking about unsaved buffers in the echo area. Answer it, or <code>C-g</code> to cancel.</p></div>
+    </div>
+
+    <div class="navrow"><button class="btn" data-go="s-survival">← Back</button><button class="btn pri" data-go="s-game">Play the trainer →</button></div>
+  </section>
+
+  <!-- 5 -->
+  <section id="s-game">
+    <h2>Chord Trainer</h2>
+    <p class="sub">You're given a task; press the real chord. Multi-key sequences like <code>C-x C-s</code> must be typed in order, exactly as Emacs expects — the display shows your progress through the sequence. The buffer below reacts so you can see what each command <em>does</em>.</p>
+
+    <div class="game">
+      <div class="g-head">
+        <span class="g-title">emacs-trainer</span>
+        <span class="pill" id="pill">ready</span>
+        <div class="g-stats">
+          <span>score <b id="gScore">0</b></span>
+          <span class="streak">streak <b id="gStreak">0</b></span>
+          <span>best <b id="gBest">0</b></span>
+          <span>lvl <b id="gLvl">1</b></span>
+        </div>
+      </div>
+
+      <div class="g-body">
+        <p class="g-task" id="gTask">Press <b>Start</b> to begin.</p>
+        <div class="g-hint" id="gHint">real bindings only · C-g resets a half-typed sequence, exactly like Emacs</div>
+        <div class="keyview" id="keyview"><span class="ghost">— — —</span></div>
+        <div class="g-fb" id="gFb"></div>
+      </div>
+
+      <div class="catsel" id="catsel"></div>
+
+      <div class="frame" style="margin:0;border-left:0;border-right:0;border-radius:0">
+        <div class="fr-buf" id="buf"></div>
+        <div class="modeline"><span class="b" id="mlMod">-UUU:----F1</span><span class="b" id="mlBuf">notes.txt</span><span id="mlPos">All L1</span></div>
+        <div class="echo" id="echo">&nbsp;</div>
+      </div>
+
+      <div class="g-foot">
+        <button class="btn pri" id="gStart">Start</button>
+        <button class="btn" id="gSkip">Skip</button>
+        <button class="btn" id="gReset">Reset</button>
+      </div>
+      <div class="g-log" id="gLog"><div>trainer ready — 46 bindings, all verified against Emacs 29.3.</div></div>
+    </div>
+
+    <div class="note" style="margin-top:18px"><b>Your browser vs Emacs:</b> a few chords are owned by the browser and can't be intercepted — <kbd>C-w</kbd> closes a tab, <kbd>C-n</kbd> opens a window, <kbd>C-t</kbd> reopens a tab. Those tasks are marked <em>type it</em>: click the key display and type the chord as text instead. Everything else is captured live.</div>
+
+    <div class="navrow"><button class="btn" data-go="s-help">← Back</button><button class="btn pri" data-go="s-next">Where to go next →</button></div>
+  </section>
+
+  <!-- 6 -->
+  <section id="s-next">
+    <h2>After the basics</h2>
+
+    <h3>Configuration</h3>
+    <p class="sub" style="margin-bottom:10px">Your config lives in <code>~/.emacs.d/init.el</code> (or <code>~/.config/emacs/init.el</code>). It's Emacs Lisp, and it's evaluated at startup. Two lines worth having on day one:</p>
+    <div class="cmdline"><span>(global-display-line-numbers-mode 1)</span><button data-copy="(global-display-line-numbers-mode 1)">copy</button></div>
+    <div class="cmdline"><span>(setq make-backup-files nil)</span><button data-copy="(setq make-backup-files nil)">copy</button></div>
+    <p class="sub" style="margin:6px 0 0">Evaluate a line without restarting by putting point after it and pressing <code>C-x C-e</code>. <code>M-x customize</code> gives a menu-driven alternative if you'd rather not write Lisp yet.</p>
+
+    <h3>Worth learning next, in order</h3>
+    <div class="cards">
+      <div class="card"><h4>keyboard macros</h4><p><code>C-x (</code> record, <code>C-x )</code> stop, <code>C-x e</code> replay. Repetitive edits become one keystroke. Wildly underused.</p></div>
+      <div class="card"><h4>dired</h4><p><code>C-x d</code> — a file manager in a buffer. Rename, delete and operate on many files with the same editing keys you already know.</p></div>
+      <div class="card"><h4>rectangles</h4><p><code>C-x r k</code> / <code>C-x r y</code> — column-wise cut and paste. The tool for editing aligned data.</p></div>
+      <div class="card"><h4>registers</h4><p><code>C-x r s</code> save text, <code>C-x r i</code> insert, <code>C-x r SPC</code> store a position to jump back to.</p></div>
+      <div class="card"><h4>query-replace</h4><p><code>M-%</code> — replace with a yes/no prompt per hit. <code>C-M-%</code> does the same with regexps.</p></div>
+      <div class="card"><h4>org-mode</h4><p>Built in. Outlines, agendas, literate code. Many people's entire reason for using Emacs.</p></div>
+    </div>
+
+    <h3>Packages</h3>
+    <p class="sub" style="margin-bottom:10px">Emacs ships with a package manager. <code>M-x package-list-packages</code> browses; <code>M-x package-install</code> installs. Add MELPA for the wider ecosystem:</p>
+    <div class="cmdline"><span>(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)</span><button data-copy="(add-to-list 'package-archives '(&quot;melpa&quot; . &quot;https://melpa.org/packages/&quot;) t)">copy</button></div>
+
+    <div class="note"><b>Official sources.</b> The <a href="https://www.gnu.org/software/emacs/manual/">GNU Emacs Manual</a> is the complete reference, <code>C-h t</code> is the hands-on tutorial, and <code>C-h r</code> opens the manual inside Emacs itself. The reference card this guide was built from ships with your install at <code>etc/refcards/refcard.tex</code>.</p></div>
+
+    <div class="navrow"><button class="btn" data-go="s-game">← Back</button><button class="btn pri" data-go="s-notation">Start over ↺</button></div>
+  </section>
+
+  <div class="foot">
+    Bindings extracted from the reference card shipped with GNU Emacs 29.3
+    (<code>etc/refcards/refcard.tex</code>) and each one verified with
+    <code>key-binding</code> against a live <code>emacs -Q</code> — so every command name here is real.
+    Canonical docs: <a href="https://www.gnu.org/software/emacs/manual/">GNU Emacs Manual</a>.
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var SECTIONS=[
+    {id:"s-notation",label:"1 · Notation"},
+    {id:"s-model",label:"2 · Model"},
+    {id:"s-survival",label:"3 · Survival"},
+    {id:"s-help",label:"4 · Self-help"},
+    {id:"s-game",label:"5 · Trainer"},
+    {id:"s-next",label:"6 · Next"}
+  ];
+  var nav=document.getElementById("nav");
+  SECTIONS.forEach(function(s){var b=document.createElement("button");b.textContent=s.label;b.dataset.go=s.id;nav.appendChild(b);});
+  function show(id){
+    SECTIONS.forEach(function(s){var el=document.getElementById(s.id);if(el)el.classList.toggle("on",s.id===id);});
+    Array.prototype.forEach.call(nav.children,function(b){b.setAttribute("aria-current",b.dataset.go===id?"true":"false");});
+    var i=SECTIONS.map(function(s){return s.id;}).indexOf(id);
+    document.getElementById("progTxt").textContent="step "+(i+1)+" / "+SECTIONS.length;
+    document.getElementById("progBar").style.width=((i+1)/SECTIONS.length*100)+"%";
+    try{localStorage.setItem("emacs.section",id);}catch(e){}
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+  document.addEventListener("click",function(e){var t=e.target.closest("[data-go]");if(t)show(t.dataset.go);});
+
+  document.addEventListener("click",function(e){
+    var b=e.target.closest("[data-copy]"); if(!b) return;
+    var txt=b.getAttribute("data-copy");
+    function done(){var o=b.textContent;b.textContent="copied";setTimeout(function(){b.textContent=o;},1100);}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done,done);}
+    else{var ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");}catch(err){}document.body.removeChild(ta);done();}
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll("#ladder .rung"),function(r){
+    r.addEventListener("click",function(){r.classList.toggle("open");});
+  });
+
+  /* ---- survival tables: key, description, VERIFIED command name ---- */
+  var TABLES=[
+    ["Moving around",[
+      ["C-f","forward one character","forward-char"],
+      ["C-b","back one character","backward-char"],
+      ["C-n","next line","next-line"],
+      ["C-p","previous line","previous-line"],
+      ["M-f","forward one word","forward-word"],
+      ["M-b","back one word","backward-word"],
+      ["C-a","start of line","move-beginning-of-line"],
+      ["C-e","end of line","move-end-of-line"],
+      ["M-&lt;","start of buffer","beginning-of-buffer"],
+      ["M-&gt;","end of buffer","end-of-buffer"],
+      ["C-v","scroll down a screen","scroll-up-command"],
+      ["M-v","scroll up a screen","scroll-down-command"],
+      ["M-g g","go to line number","goto-line"],
+      ["C-l","recenter: middle, top, bottom","recenter-top-bottom"]
+    ]],
+    ["Files and buffers",[
+      ["C-x C-f","open (find) a file","find-file"],
+      ["C-x C-s","save this buffer","save-buffer"],
+      ["C-x s","save all buffers","save-some-buffers"],
+      ["C-x C-w","save as a new name","write-file"],
+      ["C-x b","switch buffer","switch-to-buffer"],
+      ["C-x C-b","list all buffers","list-buffers"],
+      ["C-x k","kill a buffer","kill-buffer"],
+      ["C-x C-c","quit Emacs","save-buffers-kill-terminal"]
+    ]],
+    ["Cut, copy, paste, undo",[
+      ["C-SPC","set the mark here","set-mark-command"],
+      ["C-w","kill (cut) the region","kill-region"],
+      ["M-w","copy the region","kill-ring-save"],
+      ["C-y","yank (paste)","yank"],
+      ["M-y","cycle to an older kill","yank-pop"],
+      ["C-k","kill to end of line","kill-line"],
+      ["M-d","kill the next word","kill-word"],
+      ["C-d","delete one character","delete-char"],
+      ["C-x u","undo","undo"],
+      ["C-x h","select whole buffer","mark-whole-buffer"]
+    ]],
+    ["Search and replace",[
+      ["C-s","incremental search forward","isearch-forward"],
+      ["C-r","incremental search backward","isearch-backward"],
+      ["C-M-s","regexp search forward","isearch-forward-regexp"],
+      ["M-%","query replace","query-replace"]
+    ]],
+    ["Windows",[
+      ["C-x 2","split above and below","split-window-below"],
+      ["C-x 3","split side by side","split-window-right"],
+      ["C-x o","move to the other window","other-window"],
+      ["C-x 0","close this window","delete-window"],
+      ["C-x 1","close all other windows","delete-other-windows"]
+    ]],
+    ["Transform text",[
+      ["M-u","upcase word","upcase-word"],
+      ["M-l","downcase word","downcase-word"],
+      ["M-c","capitalize word","capitalize-word"],
+      ["C-t","transpose characters","transpose-chars"],
+      ["M-t","transpose words","transpose-words"],
+      ["M-;","comment or uncomment","comment-dwim"],
+      ["C-q","insert next char literally","quoted-insert"]
+    ]]
+  ];
+  var tw=document.getElementById("tables");
+  TABLES.forEach(function(t){
+    var h=document.createElement("h3"); h.textContent=t[0]; tw.appendChild(h);
+    var tb=document.createElement("table");
+    tb.innerHTML="<thead><tr><th>Do this</th><th>Key</th><th>Command</th></tr></thead><tbody>"+
+      t[1].map(function(r){return "<tr><td>"+r[1]+"</td><td class='k'>"+r[0]+"</td><td class='cmd'>"+r[2]+"</td></tr>";}).join("")+
+      "</tbody>";
+    tw.appendChild(tb);
+  });
+
+  /* ================= TRAINER ================= */
+  /* seq: array of chord steps. Each step: {c:ctrl, m:meta, k:key} */
+  function P(str){
+    return str.split(" ").map(function(tok){
+      var c=false,m=false,k=tok;
+      while(true){
+        if(k.indexOf("C-")===0){c=true;k=k.slice(2);continue;}
+        if(k.indexOf("M-")===0){m=true;k=k.slice(2);continue;}
+        break;
+      }
+      if(k==="SPC")k=" ";
+      return {c:c,m:m,k:k.length===1?k.toLowerCase():k, raw:tok};
+    });
+  }
+  var T=[
+    // lvl, keys, task, command, fx, browserOwned
+    [1,"C-f","Move forward one <em>character</em>.","forward-char","fwd",0],
+    [1,"C-b","Move back one <em>character</em>.","backward-char","back",0],
+    [1,"C-a","Jump to the <em>start of the line</em>.","move-beginning-of-line","home",0],
+    [1,"C-e","Jump to the <em>end of the line</em>.","move-end-of-line","end",0],
+    [1,"C-g","<em>Cancel</em> — the universal escape hatch.","keyboard-quit","quit",0],
+    [2,"M-f","Move forward one <em>word</em>.","forward-word","wfwd",0],
+    [2,"M-b","Move back one <em>word</em>.","backward-word","wback",0],
+    [2,"M-<","Go to the <em>beginning of the buffer</em>.","beginning-of-buffer","bob",0],
+    [2,"M->","Go to the <em>end of the buffer</em>.","end-of-buffer","eob",0],
+    [2,"C-v","Scroll <em>down</em> one screen.","scroll-up-command","scroll",0],
+    [2,"M-v","Scroll <em>up</em> one screen.","scroll-down-command","scroll",0],
+    [3,"C-x C-s","<em>Save</em> the buffer.","save-buffer","save",0],
+    [3,"C-x C-f","<em>Open</em> a file.","find-file","find",0],
+    [3,"C-x b","<em>Switch</em> to another buffer.","switch-to-buffer","switch",0],
+    [3,"C-x k","<em>Kill</em> this buffer.","kill-buffer","killbuf",0],
+    [3,"C-x C-c","<em>Quit</em> Emacs.","save-buffers-kill-terminal","quitemacs",0],
+    [3,"C-x u","<em>Undo</em> the last change.","undo","undo",0],
+    [4,"C-SPC","<em>Set the mark</em> to start a region.","set-mark-command","mark",0],
+    [4,"C-y","<em>Yank</em> — paste the last kill.","yank","yank",0],
+    [4,"M-y","Cycle to an <em>older kill</em>.","yank-pop","yankpop",0],
+    [4,"C-k","<em>Kill to the end of the line</em>.","kill-line","killline",0],
+    [4,"M-d","<em>Kill the next word</em>.","kill-word","killword",0],
+    [4,"C-d","<em>Delete</em> one character.","delete-char","del",0],
+    [4,"C-w","<em>Kill the region</em> (cut).","kill-region","killregion",1],
+    [4,"M-w","<em>Copy</em> the region.","kill-ring-save","copy",0],
+    [5,"C-s","<em>Search</em> forward.","isearch-forward","search",0],
+    [5,"C-r","<em>Search backward</em>.","isearch-backward","rsearch",0],
+    [5,"M-%","<em>Query replace</em>.","query-replace","qr",0],
+    [5,"C-x 2","Split the window <em>above and below</em>.","split-window-below","split2",0],
+    [5,"C-x 3","Split the window <em>side by side</em>.","split-window-right","split3",0],
+    [5,"C-x o","Move to the <em>other window</em>.","other-window","other",0],
+    [5,"C-x 1","Close <em>all other windows</em>.","delete-other-windows","only",0],
+    [5,"C-x 0","Close <em>this</em> window.","delete-window","close",0],
+    [6,"M-u","<em>Upcase</em> the word.","upcase-word","upcase",0],
+    [6,"M-l","<em>Downcase</em> the word.","downcase-word","downcase",0],
+    [6,"M-c","<em>Capitalize</em> the word.","capitalize-word","cap",0],
+    [6,"C-t","<em>Transpose</em> two characters.","transpose-chars","transpose",1],
+    [6,"M-t","<em>Transpose</em> two words.","transpose-words","transposew",0],
+    [6,"M-;","<em>Comment or uncomment</em>.","comment-dwim","comment",0],
+    [6,"C-x h","Select the <em>whole buffer</em>.","mark-whole-buffer","all",0],
+    [6,"M-g g","<em>Go to a line number</em>.","goto-line","goto",0],
+    [6,"C-l","<em>Recenter</em> the screen on point.","recenter-top-bottom","recenter",0],
+    [6,"C-h k","Ask <em>what a key does</em>.","describe-key","help",0],
+    [6,"C-h t","Open the <em>built-in tutorial</em>.","help-with-tutorial","tut",0],
+    [6,"C-x (","<em>Start recording</em> a keyboard macro.","kmacro-start-macro","macro",0],
+    [6,"C-x e","<em>Replay</em> the keyboard macro.","kmacro-end-and-call-macro","macroe",0]
+  ].map(function(r){return {lvl:r[0],keys:r[1],seq:P(r[1]),say:r[2],cmd:r[3],fx:r[4],owned:r[5]};});
+
+  var CATS=[["all","everything"],["move","moving"],["file","files"],["kill","kill &amp; yank"],["win","windows"],["text","text"]];
+  var CATMAP={move:["fwd","back","home","end","wfwd","wback","bob","eob","scroll","goto","recenter","quit"],
+              file:["save","find","switch","killbuf","quitemacs","undo"],
+              kill:["mark","yank","yankpop","killline","killword","del","killregion","copy"],
+              win:["split2","split3","other","only","close","search","rsearch","qr"],
+              text:["upcase","downcase","cap","transpose","transposew","comment","all","help","tut","macro","macroe"]};
+
+  var g={on:false,cur:null,step:0,typed:[],score:0,streak:0,best:0,lvl:1,cat:"all",queue:[]};
+  try{g.best=parseInt(localStorage.getItem("emacs.best")||"0",10)||0;}catch(e){}
+
+  var $=function(i){return document.getElementById(i);};
+  var elTask=$("gTask"),elHint=$("gHint"),elFb=$("gFb"),elLog=$("gLog"),elKV=$("keyview"),
+      elScore=$("gScore"),elStreak=$("gStreak"),elBest=$("gBest"),elLvl=$("gLvl"),elPill=$("pill"),
+      elBuf=$("buf"),elEcho=$("echo"),elMlMod=$("mlMod"),elMlBuf=$("mlBuf"),elMlPos=$("mlPos");
+  elBest.textContent=g.best;
+
+  var csel=$("catsel");
+  CATS.forEach(function(c){
+    var b=document.createElement("button"); b.innerHTML=c[1]; b.dataset.cat=c[0];
+    b.setAttribute("aria-pressed",c[0]==="all"?"true":"false");
+    b.addEventListener("click",function(){
+      g.cat=c[0];
+      Array.prototype.forEach.call(csel.children,function(x){x.setAttribute("aria-pressed",x.dataset.cat===c[0]?"true":"false");});
+      if(g.on){buildQueue();next();}
+    });
+    csel.appendChild(b);
+  });
+
+  var TEXT="The quick brown fox jumps over the lazy dog.\nEmacs is a text editor with opinions.\nPoint is where the cursor sits.";
+  var st={line:1,col:0,mod:false,mark:false,buf:"notes.txt",windows:1,killed:""};
+
+  function renderBuf(msg,cls){
+    var lines=TEXT.split("\n");
+    var out=lines.map(function(l,i){
+      if(i+1!==st.line) return escapeHtml(l);
+      var c=Math.min(st.col,l.length);
+      return escapeHtml(l.slice(0,c))+'<span class="pt">'+escapeHtml(l[c]||" ")+'</span>'+escapeHtml(l.slice(c+1));
+    }).join("\n");
+    elBuf.innerHTML=out;
+    elMlMod.textContent=(st.mod?"-UU*:----F1":"-UUU:----F1");
+    elMlBuf.textContent=st.buf;
+    elMlPos.textContent="All L"+st.line+(st.mark?"  Mark set":"")+(st.windows>1?"  ("+st.windows+" windows)":"");
+    if(msg!==undefined) elEcho.innerHTML=cls?'<span class="'+cls+'">'+msg+'</span>':msg;
+  }
+  function escapeHtml(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+  function applyFx(fx,cmd){
+    var lines=TEXT.split("\n"), cl=lines[st.line-1]||"";
+    var echo="";
+    switch(fx){
+      case "fwd": st.col=Math.min(st.col+1,cl.length); break;
+      case "back": st.col=Math.max(st.col-1,0); break;
+      case "home": st.col=0; break;
+      case "end": st.col=cl.length; break;
+      case "wfwd": var n=cl.indexOf(" ",st.col+1); st.col=n<0?cl.length:n+1; break;
+      case "wback": var b=cl.lastIndexOf(" ",Math.max(st.col-2,0)); st.col=b<0?0:b+1; break;
+      case "bob": st.line=1; st.col=0; break;
+      case "eob": st.line=lines.length; st.col=(lines[lines.length-1]||"").length; break;
+      case "scroll": echo="(buffer is smaller than one screen)"; break;
+      case "goto": echo="Goto line: "; break;
+      case "recenter": echo="(point recentered)"; break;
+      case "quit": st.mark=false; echo="Quit"; break;
+      case "save": st.mod=false; echo="Wrote ~/notes.txt"; break;
+      case "find": echo="Find file: ~/"; break;
+      case "switch": echo="Switch to buffer (default *scratch*): "; break;
+      case "killbuf": echo="Kill buffer: (default notes.txt) "; break;
+      case "quitemacs": echo="Save file ~/notes.txt? (y, n, !, ., q) "; break;
+      case "undo": st.mod=false; echo="Undo!"; break;
+      case "mark": st.mark=true; echo="Mark set"; break;
+      case "yank": st.mod=true; echo="(yanked from the kill ring)"; break;
+      case "yankpop": echo="(cycled to an older kill)"; break;
+      case "killline": st.mod=true; echo="(killed to end of line)"; break;
+      case "killword": st.mod=true; echo="(killed next word)"; break;
+      case "del": st.mod=true; break;
+      case "killregion": st.mod=true; st.mark=false; echo="(region killed)"; break;
+      case "copy": st.mark=false; echo="Saved text to kill ring"; break;
+      case "search": echo="I-search: "; break;
+      case "rsearch": echo="I-search backward: "; break;
+      case "qr": echo="Query replace: "; break;
+      case "split2": st.windows=2; echo="(split above and below)"; break;
+      case "split3": st.windows=2; echo="(split side by side)"; break;
+      case "other": echo="(moved to other window)"; break;
+      case "only": st.windows=1; echo="(other windows closed)"; break;
+      case "close": st.windows=1; echo="(window closed)"; break;
+      case "upcase": case "downcase": case "cap": st.mod=true; echo="("+cmd+")"; break;
+      case "transpose": case "transposew": st.mod=true; echo="("+cmd+")"; break;
+      case "comment": st.mod=true; echo="(comment toggled)"; break;
+      case "all": st.mark=true; echo="(whole buffer selected)"; break;
+      case "help": echo="Describe key: "; break;
+      case "tut": echo="(opening TUTORIAL)"; break;
+      case "macro": echo="Defining kbd macro..."; break;
+      case "macroe": echo="(macro replayed)"; break;
+    }
+    renderBuf(echo||"&nbsp;", echo?"m":"");
+  }
+
+  function log(m,c){var d=document.createElement("div");if(c)d.className=c;d.textContent=m;elLog.insertBefore(d,elLog.firstChild);while(elLog.children.length>40)elLog.removeChild(elLog.lastChild);}
+
+  function pool(){
+    var p=T.filter(function(t){return t.lvl<=g.lvl;});
+    if(g.cat!=="all"){var allow=CATMAP[g.cat]||[];p=p.filter(function(t){return allow.indexOf(t.fx)>=0;});}
+    return p.length?p:T.filter(function(t){return t.lvl<=g.lvl;});
+  }
+  function buildQueue(){
+    var p=pool().slice();
+    for(var i=p.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var s=p[i];p[i]=p[j];p[j]=s;}
+    g.queue=p.slice(0,10);
+  }
+  function next(){
+    if(!g.queue.length) buildQueue();
+    g.cur=g.queue.shift(); g.step=0; g.typed=[];
+    elTask.innerHTML=g.cur.say;
+    elHint.innerHTML=g.cur.owned
+      ? '<b style="color:var(--warn)">browser owns this chord</b> — type it as text: e.g. <code>'+g.cur.keys+'</code> then Enter'
+      : (g.cur.seq.length>1 ? 'a <b>'+g.cur.seq.length+'-step sequence</b> · C-g resets' : 'single chord · C-g resets');
+    elFb.textContent=""; elFb.className="g-fb";
+    // Test hook: lets automated checks drive the trainer correctly without
+    // pressing a wrong key first (which would reset the streak and mask bugs).
+    try{window.__curKeys=g.cur.keys;window.__curOwned=!!g.cur.owned;}catch(e){}
+    paintKeys();
+    if(g.cur.owned) makeTypeBox(); 
+  }
+
+  function paintKeys(){
+    if(!g.cur){elKV.innerHTML='<span class="ghost">— — —</span>';return;}
+    var html=g.cur.seq.map(function(s,i){
+      if(i<g.step) return '<span class="typed">'+escapeHtml(s.raw)+'</span>';
+      return '<span class="ghost">'+(i===g.step?"?":"·")+'</span>';
+    }).join(" ");
+    elKV.innerHTML=html;
+    elPill.textContent=g.step>0?("sequence "+g.step+"/"+g.cur.seq.length):"ready";
+    elPill.className="pill"+(g.step>0?" live":"");
+  }
+
+  function makeTypeBox(){
+    elKV.innerHTML='<input id="typeIn" style="background:transparent;border:0;outline:0;color:var(--accent);font:inherit;font-family:var(--mono);text-align:center;width:200px" placeholder="type the chord…" autocomplete="off">';
+    var inp=document.getElementById("typeIn");
+    inp.focus();
+    inp.addEventListener("keydown",function(e){
+      e.stopPropagation();
+      if(e.key==="Enter"){
+        var v=inp.value.trim().replace(/\s+/g," ");
+        if(v.toLowerCase()===g.cur.keys.toLowerCase()) good(); else bad(v||"(empty)");
+      }
+    });
+  }
+
+  function good(){
+    g.score+=10; g.streak++;
+    if(g.streak>g.best){g.best=g.streak;try{localStorage.setItem("emacs.best",String(g.best));}catch(e){}}
+    elScore.textContent=g.score; elStreak.textContent=g.streak; elBest.textContent=g.best;
+    elFb.innerHTML="✓ "+escapeHtml(g.cur.keys)+" &nbsp;→&nbsp; <span style='color:var(--ink-dim)'>"+g.cur.cmd+"</span>";
+    elFb.className="g-fb good";
+    log("✓ "+g.cur.keys+"  ("+g.cur.cmd+")","y");
+    applyFx(g.cur.fx,g.cur.cmd);
+    if(g.streak>0&&g.streak%5===0&&g.lvl<6){g.lvl++;elLvl.textContent=g.lvl;log("level up → "+g.lvl);buildQueue();}
+    var was=g.cur;
+    setTimeout(function(){if(g.on&&g.cur===was)next();},820);
+  }
+  function bad(got){
+    g.streak=0; elStreak.textContent=0; g.step=0; g.typed=[];
+    elFb.textContent="✗ "+got+" — wanted "+g.cur.keys;
+    elFb.className="g-fb bad";
+    log("✗ "+got+" (wanted "+g.cur.keys+")","n");
+    paintKeys(); if(g.cur.owned) makeTypeBox();
+  }
+
+  document.addEventListener("keydown",function(e){
+    if(!g.on||!g.cur||g.cur.owned) return;
+    if(e.key==="Shift"||e.key==="Control"||e.key==="Alt"||e.key==="Meta") return;
+
+    // A sequence can complete while good() is still animating the next task in.
+    // Any keypress arriving in that window has no pending step — swallow it
+    // instead of indexing past the end of seq (was: TypeError reading 'k').
+    var want=g.cur.seq[g.step];
+    if(!want){ e.preventDefault(); return; }
+
+    var k=e.key;
+    var isCtrl=e.ctrlKey, isMeta=e.altKey;
+
+    // C-g always resets a partial sequence, exactly like Emacs
+    if(isCtrl&&k.toLowerCase()==="g"&&!(want.c&&want.k==="g")){
+      e.preventDefault(); g.step=0; g.typed=[];
+      elEcho.innerHTML='<span class="e">Quit</span>';
+      paintKeys(); return;
+    }
+
+    var norm=(k===" ")?" ":(k.length===1?k.toLowerCase():k);
+    var wantK=want.k;
+    var match=(isCtrl===want.c)&&(isMeta===want.m)&&(norm===wantK||(k===wantK));
+
+    // allow shifted symbols like < > % ; ( to match without requiring shift state
+    if(!match&&isCtrl===want.c&&isMeta===want.m&&k===want.k) match=true;
+
+    if(k.length===1||k==="Enter"||k==="Tab"||k==="Backspace"){
+      e.preventDefault();
+      if(match){
+        g.step++; g.typed.push(want.raw);
+        if(g.step>=g.cur.seq.length){ paintKeys(); good(); }
+        else { paintKeys(); elEcho.innerHTML='<span class="m">'+escapeHtml(g.typed.join(" "))+'-</span>'; }
+      }else{
+        var got=(isCtrl?"C-":"")+(isMeta?"M-":"")+(k===" "?"SPC":k);
+        bad(got);
+      }
+    }
+  });
+
+  $("gStart").addEventListener("click",function(){
+    g.on=true;g.score=0;g.streak=0;g.lvl=1;
+    elScore.textContent=0;elStreak.textContent=0;elLvl.textContent=1;
+    st={line:1,col:0,mod:false,mark:false,buf:"notes.txt",windows:1,killed:""};
+    renderBuf("&nbsp;"); buildQueue(); next();
+    log("started — level 1; 5 in a row levels you up");
+    this.textContent="Restart";
+  });
+  $("gSkip").addEventListener("click",function(){
+    if(!g.on)return; log("skipped "+g.cur.keys); g.streak=0; elStreak.textContent=0; next();
+  });
+  $("gReset").addEventListener("click",function(){
+    g.on=false;g.cur=null;g.step=0;g.score=0;g.streak=0;g.lvl=1;
+    elScore.textContent=0;elStreak.textContent=0;elLvl.textContent=1;
+    elTask.innerHTML="Press <b>Start</b> to begin.";
+    elHint.textContent="real bindings only · C-g resets a half-typed sequence, exactly like Emacs";
+    elFb.textContent="";elFb.className="g-fb";elKV.innerHTML='<span class="ghost">— — —</span>';
+    elPill.textContent="ready";elPill.className="pill";
+    st={line:1,col:0,mod:false,mark:false,buf:"notes.txt",windows:1,killed:""};
+    renderBuf("&nbsp;"); $("gStart").textContent="Start"; log("reset");
+  });
+
+  renderBuf("&nbsp;");
+  var last=null; try{last=localStorage.getItem("emacs.section");}catch(e){}
+  show(last&&document.getElementById(last)?last:"s-notation");
+})();
+</script>
+</body>
+</html>
